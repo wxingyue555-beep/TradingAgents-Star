@@ -1,3 +1,4 @@
+from __future__ import annotations
 # TradingAgents/graph/propagation.py
 
 from typing import Any

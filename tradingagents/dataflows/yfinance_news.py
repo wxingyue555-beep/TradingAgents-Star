@@ -1,3 +1,4 @@
+from __future__ import annotations
 """yfinance-based news data fetching functions."""
 
 import contextlib

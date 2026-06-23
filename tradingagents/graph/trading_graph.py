@@ -1,3 +1,4 @@
+from __future__ import annotations
 # TradingAgents/graph/trading_graph.py
 
 import json
@@ -14,6 +15,7 @@ from langgraph.prebuilt import ToolNode
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_balance_sheet,
+    get_capital_flow,
     get_cashflow,
     get_fundamentals,
     get_global_news,
@@ -49,7 +51,7 @@ class TradingAgentsGraph:
 
     def __init__(
         self,
-        selected_analysts=("market", "social", "news", "fundamentals"),
+        selected_analysts=("market", "social", "news", "fundamentals", "industry_chain", "capital_flow"),
         debug=False,
         config: dict[str, Any] = None,
         callbacks: list | None = None,
@@ -181,12 +183,9 @@ class TradingAgentsGraph:
             ),
             "news": ToolNode(
                 [
-                    # News and insider information
+                    # A-share news sources
                     get_news,
                     get_global_news,
-                    get_insider_transactions,
-                    get_macro_indicators,
-                    get_prediction_markets,
                 ]
             ),
             "fundamentals": ToolNode(
@@ -196,6 +195,19 @@ class TradingAgentsGraph:
                     get_balance_sheet,
                     get_cashflow,
                     get_income_statement,
+                ]
+            ),
+            "industry_chain": ToolNode(
+                [
+                    get_stock_data,
+                    get_indicators,
+                ]
+            ),
+            "capital_flow": ToolNode(
+                [
+                    get_stock_data,
+                    get_indicators,
+                    get_capital_flow,
                 ]
             ),
         }
@@ -446,6 +458,8 @@ class TradingAgentsGraph:
             "sentiment_report": final_state["sentiment_report"],
             "news_report": final_state["news_report"],
             "fundamentals_report": final_state["fundamentals_report"],
+            "industry_chain_report": final_state.get("industry_chain_report", ""),
+            "capital_flow_report": final_state.get("capital_flow_report", ""),
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],

@@ -1,4 +1,5 @@
-from typing import Annotated
+from __future__ import annotations
+from typing import Optional, Annotated
 
 from langchain_core.tools import tool
 
@@ -12,7 +13,7 @@ def get_prediction_markets(
         "Event topic/keyword, e.g. 'Fed rate cut', 'recession 2026', "
         "'US election', or a sector/company event.",
     ],
-    limit: Annotated[int | None, "Max markets to return; omit for a default of 6"] = None,
+    limit: Annotated[Optional[int], "Max markets to return; omit for a default of 6"] = None,
 ) -> str:
     """
     Retrieve live, market-implied probabilities for forward-looking events from

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Polymarket prediction-market vendor.
 
 Surfaces live, market-implied probabilities for forward-looking events (Fed

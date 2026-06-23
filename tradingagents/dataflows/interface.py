@@ -29,15 +29,31 @@ from .y_finance import (
     get_YFin_data_online,
 )
 from .yfinance_news import get_global_news_yfinance, get_news_yfinance
+# ===== LOCAL_DB PATCH BEGIN =====
+# 本地通达信 SQLite 数据库 HTTP API (新增vendor)
+from .china_news import get_china_stock_news, get_china_global_news
+from .local_db import (
+    get_local_stock_data,
+    get_local_fundamentals,
+    get_local_balance_sheet,
+    get_local_cashflow,
+    get_local_income_statement,
+    get_local_indicators,
+    get_local_capital_flow,
+    get_local_news,
+    get_local_global_news,
+)
+# ===== LOCAL_DB PATCH END =====
 
 logger = logging.getLogger(__name__)
 
 # Tools organized by category
 TOOLS_CATEGORIES = {
     "core_stock_apis": {
-        "description": "OHLCV stock price data",
+        "description": "OHLCV stock price data and capital flow",
         "tools": [
-            "get_stock_data"
+            "get_stock_data",
+            "get_capital_flow"
         ]
     },
     "technical_indicators": {
@@ -97,41 +113,55 @@ VENDOR_METHODS = {
     "get_stock_data": {
         "alpha_vantage": get_alpha_vantage_stock,
         "yfinance": get_YFin_data_online,
+        "local_db": get_local_stock_data,
     },
     # technical_indicators
     "get_indicators": {
         "alpha_vantage": get_alpha_vantage_indicator,
         "yfinance": get_stock_stats_indicators_window,
+        "local_db": get_local_indicators,
     },
     # fundamental_data
     "get_fundamentals": {
         "alpha_vantage": get_alpha_vantage_fundamentals,
         "yfinance": get_yfinance_fundamentals,
+        "local_db": get_local_fundamentals,
     },
     "get_balance_sheet": {
         "alpha_vantage": get_alpha_vantage_balance_sheet,
         "yfinance": get_yfinance_balance_sheet,
+        "local_db": get_local_balance_sheet,
     },
     "get_cashflow": {
         "alpha_vantage": get_alpha_vantage_cashflow,
         "yfinance": get_yfinance_cashflow,
+        "local_db": get_local_cashflow,
     },
     "get_income_statement": {
         "alpha_vantage": get_alpha_vantage_income_statement,
         "yfinance": get_yfinance_income_statement,
+        "local_db": get_local_income_statement,
     },
     # news_data
     "get_news": {
         "alpha_vantage": get_alpha_vantage_news,
         "yfinance": get_news_yfinance,
+        "local_db": get_local_news,
+        "china_news": get_china_stock_news,
     },
     "get_global_news": {
         "yfinance": get_global_news_yfinance,
         "alpha_vantage": get_alpha_vantage_global_news,
+        "local_db": get_local_global_news,
+        "china_news": get_china_global_news,
     },
     "get_insider_transactions": {
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
+    },
+    # capital_flow (A-share)
+    "get_capital_flow": {
+        "local_db": get_local_capital_flow,
     },
     # macro_data
     "get_macro_indicators": {

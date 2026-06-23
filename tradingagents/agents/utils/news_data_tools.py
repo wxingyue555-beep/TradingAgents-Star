@@ -1,4 +1,5 @@
-from typing import Annotated
+from __future__ import annotations
+from typing import Optional, Annotated
 
 from langchain_core.tools import tool
 
@@ -26,8 +27,8 @@ def get_news(
 @tool
 def get_global_news(
     curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
-    look_back_days: Annotated[int | None, "Days to look back; omit to use the configured default"] = None,
-    limit: Annotated[int | None, "Max articles to return; omit to use the configured default"] = None,
+    look_back_days: Annotated[Optional[int], "Days to look back; omit to use the configured default"] = None,
+    limit: Annotated[Optional[int], "Max articles to return; omit to use the configured default"] = None,
 ) -> str:
     """
     Retrieve global news data.
@@ -58,3 +59,22 @@ def get_insider_transactions(
         str: A report of insider transaction data
     """
     return route_to_vendor("get_insider_transactions", ticker)
+
+@tool
+def get_capital_flow(
+    ticker: Annotated[str, "A股代码, 如 600000.SH"],
+    start_date: Annotated[str, "开始日期 yyyy-mm-dd 格式"],
+    end_date: Annotated[str, "结束日期 yyyy-mm-dd 格式"],
+) -> str:
+    """
+    Retrieve capital flow data for A-share stocks.
+    Uses the configured core_stock_apis vendor.
+    Returns net flow broken down by order size (超大单/大单/中单/小单).
+    Args:
+        ticker (str): A-share ticker symbol e.g. 600000.SH
+        start_date (str): Start date in yyyy-mm-dd format
+        end_date (str): End date in yyyy-mm-dd format
+    Returns:
+        str: Formatted capital flow data
+    """
+    return route_to_vendor("get_capital_flow", ticker, start_date, end_date)

@@ -1,4 +1,5 @@
-from typing import Annotated
+from __future__ import annotations
+from typing import Optional, Annotated
 
 from langchain_core.tools import tool
 
@@ -15,7 +16,7 @@ def get_macro_indicators(
     ],
     curr_date: Annotated[str, "Current date in yyyy-mm-dd format; the end of the window"],
     look_back_days: Annotated[
-        int | None, "Trailing window length in days; omit for a 1-year window"
+        Optional[int], "Trailing window length in days; omit for a 1-year window"
     ] = None,
 ) -> str:
     """

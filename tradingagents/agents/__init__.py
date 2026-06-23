@@ -1,4 +1,6 @@
 from .analysts.fundamentals_analyst import create_fundamentals_analyst
+from .analysts.industry_chain_analyst import create_industry_chain_analyst
+from .analysts.capital_flow_analyst import create_capital_flow_analyst
 from .analysts.market_analyst import create_market_analyst
 from .analysts.news_analyst import create_news_analyst
 from .analysts.sentiment_analyst import (

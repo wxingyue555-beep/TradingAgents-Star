@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from time import monotonic
@@ -26,10 +27,6 @@ ANALYST_NODE_SPECS: dict[str, AnalystNodeSpec] = {
         report_key="market_report",
     ),
     "social": AnalystNodeSpec(
-        # Wire key stays "social" for saved-config back-compat; the
-        # user-facing label is "Sentiment Analyst" to match the rename
-        # that landed in v0.2.5 (sentiment_analyst now ingests news +
-        # StockTwits + Reddit, not just social media).
         key="social",
         agent_node="Sentiment Analyst",
         clear_node="Msg Clear Sentiment",
@@ -50,8 +47,21 @@ ANALYST_NODE_SPECS: dict[str, AnalystNodeSpec] = {
         tool_node="tools_fundamentals",
         report_key="fundamentals_report",
     ),
+    "industry_chain": AnalystNodeSpec(
+        key="industry_chain",
+        agent_node="Industry_chain Analyst",
+        clear_node="Msg Clear Industry_chain",
+        tool_node="tools_industry_chain",
+        report_key="industry_chain_report",
+    ),
+    "capital_flow": AnalystNodeSpec(
+        key="capital_flow",
+        agent_node="Capital_flow Analyst",
+        clear_node="Msg Clear Capital_flow",
+        tool_node="tools_capital_flow",
+        report_key="capital_flow_report",
+    ),
 }
-
 
 def build_analyst_execution_plan(
     selected_analysts: Iterable[str],

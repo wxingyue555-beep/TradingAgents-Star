@@ -1,7 +1,18 @@
+from __future__ import annotations
 from typing import Annotated
 
 from langgraph.graph import MessagesState
 from typing_extensions import TypedDict
+
+# Python 3.9 compat: langgraph's MessagesState uses AnyMessage/add_messages in
+# its annotations, which must be resolvable when get_type_hints() evaluates them.
+try:
+    from langgraph.graph.message import AnyMessage, add_messages  # noqa: F401
+except ImportError:
+    try:
+        from langgraph.graph import AnyMessage, add_messages  # noqa: F401
+    except ImportError:
+        pass
 
 
 # Researcher team state
@@ -59,6 +70,12 @@ class AgentState(MessagesState):
         str, "Report from the News Researcher of current world affairs"
     ]
     fundamentals_report: Annotated[str, "Report from the Fundamentals Researcher"]
+    industry_chain_report: Annotated[
+        str, "Report from the Industry Chain Analyst"
+    ]
+    capital_flow_report: Annotated[
+        str, "Report from the Capital Flow Analyst (institutional/smart money)"
+    ]
 
     # researcher team discussion step
     investment_debate_state: Annotated[

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .alpha_vantage_common import _make_api_request, format_datetime_for_api
 
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Append-only markdown decision log for TradingAgents."""
 
 import re

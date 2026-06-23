@@ -1,7 +1,8 @@
+from __future__ import annotations
 import functools
 import logging
 from collections.abc import Mapping
-from typing import Any
+from typing import Optional, Any
 
 import yfinance as yf
 from langchain_core.messages import HumanMessage, RemoveMessage
@@ -17,6 +18,7 @@ from tradingagents.agents.utils.fundamental_data_tools import (
 from tradingagents.agents.utils.macro_data_tools import get_macro_indicators
 from tradingagents.agents.utils.market_data_validation_tools import get_verified_market_snapshot
 from tradingagents.agents.utils.news_data_tools import (
+    get_capital_flow,
     get_global_news,
     get_insider_transactions,
     get_news,
@@ -38,6 +40,7 @@ __all__ = [
     "get_insider_transactions",
     "get_macro_indicators",
     "get_prediction_markets",
+    "get_capital_flow",
     "get_verified_market_snapshot",
     "build_instrument_context",
     "resolve_instrument_identity",
@@ -65,7 +68,7 @@ def get_language_instruction() -> str:
     return f" Write your entire response in {lang}."
 
 
-def _clean_identity_value(value: Any) -> str | None:
+def _clean_identity_value(value: Any) -> Optional[str]:
     """Return a trimmed string, or None for empty / placeholder-ish values."""
     if not isinstance(value, str):
         return None

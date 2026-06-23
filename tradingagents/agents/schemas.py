@@ -19,7 +19,7 @@ so that:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
+from typing import Optional, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -136,15 +136,15 @@ class TraderProposal(BaseModel):
             "the research plan. Two to four sentences."
         ),
     )
-    entry_price: float | None = Field(
+    entry_price: Optional[float] = Field(
         default=None,
         description="Optional entry price target in the instrument's quote currency.",
     )
-    stop_loss: float | None = Field(
+    stop_loss: Optional[float] = Field(
         default=None,
         description="Optional stop-loss price in the instrument's quote currency.",
     )
-    position_sizing: str | None = Field(
+    position_sizing: Optional[str] = Field(
         default=None,
         description="Optional sizing guidance, e.g. '5% of portfolio'.",
     )
@@ -213,11 +213,11 @@ class PortfolioDecision(BaseModel):
             "incorporate them; otherwise rely solely on the current analysis."
         ),
     )
-    price_target: float | None = Field(
+    price_target: Optional[float] = Field(
         default=None,
         description="Optional target price in the instrument's quote currency.",
     )
-    time_horizon: str | None = Field(
+    time_horizon: Optional[str] = Field(
         default=None,
         description="Optional recommended holding period, e.g. '3-6 months'.",
     )

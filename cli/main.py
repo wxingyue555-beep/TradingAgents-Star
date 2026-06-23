@@ -68,6 +68,35 @@ class MessageBuffer:
         "Risk Management": ["Aggressive Analyst", "Neutral Analyst", "Conservative Analyst"],
         "Portfolio Management": ["Portfolio Manager"],
     }
+    # Chinese labels for graph node progress display
+    _GRAPH_NODE_LABELS = {
+        "Market Analyst": "市场分析",
+        "tools_market": "市场分析 · 工具调用",
+        "Msg Clear Market": "市场分析 · 切换阶段",
+        "Sentiment Analyst": "情绪/社交分析",
+        "tools_social": "情绪分析 · 工具调用",
+        "Msg Clear Sentiment": "情绪分析 · 切换阶段",
+        "News Analyst": "新闻分析",
+        "tools_news": "新闻分析 · 工具调用",
+        "Msg Clear News": "新闻分析 · 切换阶段",
+        "Fundamentals Analyst": "基本面分析",
+        "tools_fundamentals": "基本面 · 工具调用",
+        "Msg Clear Fundamentals": "基本面 · 切换阶段",
+        "Industry_chain Analyst": "产业链分析",
+        "tools_industry_chain": "产业链 · 工具调用",
+        "Msg Clear Industry_chain": "产业链 · 切换阶段",
+        "Capital_flow Analyst": "资金流向分析",
+        "tools_capital_flow": "资金流向 · 工具调用",
+        "Msg Clear Capital_flow": "资金流向 · 切换阶段",
+        "Bull Researcher": "看涨研究员",
+        "Bear Researcher": "看跌研究员",
+        "Research Manager": "研究经理裁决",
+        "Trader": "交易员方案",
+        "Aggressive Analyst": "风控 · 激进",
+        "Conservative Analyst": "风控 · 保守",
+        "Neutral Analyst": "风控 · 中性",
+        "Portfolio Manager": "组合经理裁决",
+    }
 
     # Analyst name mapping
     ANALYST_MAPPING = {
@@ -75,6 +104,8 @@ class MessageBuffer:
         "social": "Sentiment Analyst",
         "news": "News Analyst",
         "fundamentals": "Fundamentals Analyst",
+        "industry_chain": "Industry_chain Analyst",
+        "capital_flow": "Capital_flow Analyst",
     }
 
     # Report section mapping: section -> (analyst_key for filtering, finalizing_agent)
@@ -85,6 +116,8 @@ class MessageBuffer:
         "sentiment_report": ("social", "Sentiment Analyst"),
         "news_report": ("news", "News Analyst"),
         "fundamentals_report": ("fundamentals", "Fundamentals Analyst"),
+        "industry_chain_report": ("industry_chain", "Industry_chain Analyst"),
+        "capital_flow_report": ("capital_flow", "Capital_flow Analyst"),
         "investment_plan": (None, "Research Manager"),
         "trader_investment_plan": (None, "Trader"),
         "final_trade_decision": (None, "Portfolio Manager"),

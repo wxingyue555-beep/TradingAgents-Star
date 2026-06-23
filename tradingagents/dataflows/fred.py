@@ -1,3 +1,4 @@
+from __future__ import annotations
 """FRED (Federal Reserve Economic Data) macro vendor.
 
 Fetches macroeconomic time series — policy rates, Treasury yields, inflation,
