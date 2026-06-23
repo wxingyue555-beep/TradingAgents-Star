@@ -215,6 +215,7 @@
     checks.forEach(function(c) { analysts.push(c.value); });
 
     var rawTicker = tickerCode || document.getElementById('ticker').value.trim().split(/\s+/)[0];
+    var resolvedTicker = rawTicker;  // will be updated by SSE start event
 
     fetch('/api/analyze/stream', {
       method: 'POST',
@@ -225,8 +226,8 @@
         news_dir: document.getElementById('newsDir').value.trim(),
         analysts: analysts.join(','),
         provider: 'deepseek',
-        deep_model: 'deepseek-chat',
-        quick_model: 'deepseek-chat',
+        deep_model: 'deepseek-v4-pro',
+        quick_model: 'deepseek-v4-flash',
       })
     }).then(function(resp) {
       var reader = resp.body.getReader();
@@ -254,7 +255,7 @@
                 document.getElementById('progressBar').style.width = '100%';
                 var el = document.getElementById('resultMsg');
                 el.style.display = 'block';
-                el.innerHTML = '<span style="color:var(--green);">✅ 分析完成！</span> <a href="/api/report/view/' + rawTicker + '/' + document.getElementById('tradeDate').value + '" target="_blank" style="color:var(--accent);">📄 查看报告</a>';
+                el.innerHTML = '<span style="color:var(--green);">✅ 分析完成！</span> <a href="/api/report/view/' + resolvedTicker + '/' + document.getElementById('tradeDate').value + '" target="_blank" style="color:var(--accent);">📄 查看报告</a>';
                 loadReports();
               } else if (msg.event === 'error') {
                 addLog('❌', msg.data.message);
@@ -262,6 +263,7 @@
                 el2.style.display = 'block';
                 el2.innerHTML = '<span style="color:var(--red);">❌ ' + msg.data.message + '</span>';
               } else if (msg.event === 'start') {
+                resolvedTicker = msg.data.ticker;  // use normalized ticker from backend
                 addLog('📌', '开始: ' + msg.data.ticker + ' @ ' + msg.data.date);
               }
             } catch(e) {}
@@ -321,6 +323,7 @@
       if (['buy','sell','hold'].indexOf(r.decision) < 0) bc = 'badge-neutral';
       return '<tr onclick="window.open(\'' + r.view_url + '\',\'_blank\')">'
         + '<td><span class="ticker-link">' + r.ticker + '</span></td>'
+        + '<td>' + (r.name || '---') + '</td>'
         + '<td>' + r.trade_date + '</td>'
         + '<td><span class="badge ' + bc + '">' + (r.decision || '---') + '</span></td>'
         + '<td>' + r.size_kb + ' KB</td>'

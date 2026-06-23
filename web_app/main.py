@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.dataflows.config import set_config
+from tradingagents.agents.utils.agent_utils import clean_report_text
 from .report_builder import build_html_report
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,9 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="TradingAgents Web", version="2.0")
 
 BASE_DIR = Path(__file__).parent
+PROJECT_ROOT = BASE_DIR.parent
+RESULTS_DIR = PROJECT_ROOT / "report"
+
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -65,8 +69,8 @@ class AnalyzeRequest(BaseModel):
     trade_date: str = "2026-06-20"
     analysts: str = "market,social,news,fundamentals,industry_chain,capital_flow"
     provider: str = "deepseek"
-    deep_model: str = "deepseek-chat"
-    quick_model: str = "deepseek-chat"
+    deep_model: str = "deepseek-v4-pro"
+    quick_model: str = "deepseek-v4-flash"
     debate_rounds: int = 1
     risk_rounds: int = 1
     news_dir: str = ""
@@ -83,11 +87,122 @@ def _build_config(provider, deep_model, quick_model, debate_rounds, risk_rounds)
     cfg["output_language"] = "Chinese"
     cfg["max_debate_rounds"] = debate_rounds
     cfg["max_risk_discuss_rounds"] = risk_rounds
+    cfg["results_dir"] = str(RESULTS_DIR)
     cfg["data_vendors"]["core_stock_apis"] = "local_db"
     cfg["data_vendors"]["technical_indicators"] = "local_db"
     cfg["data_vendors"]["fundamental_data"] = "local_db"
     cfg["data_vendors"]["news_data"] = "china_news"
     return cfg
+
+
+def _build_markdown_report(final_state: dict, ticker: str, trade_date: str, stock_name: str) -> str:
+    """Build a consolidated Markdown report from the analysis final state."""
+    title = f"{stock_name} ({ticker})" if stock_name else ticker
+    lines = [
+        f"# {title} 交易分析报告",
+        f"**交易日期**: {trade_date}",
+        f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        "",
+        "---",
+        "",
+    ]
+
+    # 分析师报告
+    sections = [
+        ("市场分析", "market_report"),
+        ("情绪分析", "sentiment_report"),
+        ("新闻分析", "news_report"),
+        ("基本面分析", "fundamentals_report"),
+        ("产业链分析", "industry_chain_report"),
+        ("资金流向分析", "capital_flow_report"),
+    ]
+    has_analyst = False
+    for label, key in sections:
+        text = clean_report_text(final_state.get(key, ""))
+        if text:
+            has_analyst = True
+            lines.append(f"## {label}")
+            lines.append("")
+            lines.append(text)
+            lines.append("")
+    if not has_analyst:
+        lines.append("## 分析师报告")
+        lines.append("")
+        lines.append("_暂无分析师报告_")
+        lines.append("")
+
+    # 研究团队辩论
+    debate = final_state.get("investment_debate_state", {})
+    if debate:
+        lines.append("---")
+        lines.append("")
+        lines.append("## 研究团队辩论")
+        lines.append("")
+        if debate.get("bull_history"):
+            lines.append("### 看涨研究员")
+            lines.append("")
+            lines.append(debate["bull_history"])
+            lines.append("")
+        if debate.get("bear_history"):
+            lines.append("### 看跌研究员")
+            lines.append("")
+            lines.append(debate["bear_history"])
+            lines.append("")
+
+    # 研究经理裁决
+    invest_plan = final_state.get("investment_plan", "")
+    if invest_plan:
+        lines.append("---")
+        lines.append("")
+        lines.append("## 研究经理裁决")
+        lines.append("")
+        lines.append(invest_plan)
+        lines.append("")
+
+    # 交易员方案
+    trader_plan = final_state.get("trader_investment_plan", "")
+    if trader_plan:
+        lines.append("---")
+        lines.append("")
+        lines.append("## 交易员方案")
+        lines.append("")
+        lines.append(trader_plan)
+        lines.append("")
+
+    # 风控辩论
+    risk = final_state.get("risk_debate_state", {})
+    if risk:
+        lines.append("---")
+        lines.append("")
+        lines.append("## 风控团队辩论")
+        lines.append("")
+        if risk.get("aggressive_history"):
+            lines.append("### 激进评估")
+            lines.append("")
+            lines.append(risk["aggressive_history"])
+            lines.append("")
+        if risk.get("conservative_history"):
+            lines.append("### 保守评估")
+            lines.append("")
+            lines.append(risk["conservative_history"])
+            lines.append("")
+        if risk.get("neutral_history"):
+            lines.append("### 中性评估")
+            lines.append("")
+            lines.append(risk["neutral_history"])
+            lines.append("")
+
+    # 最终决策
+    final_decision = final_state.get("final_trade_decision", "")
+    if final_decision:
+        lines.append("---")
+        lines.append("")
+        lines.append("## 最终决策")
+        lines.append("")
+        lines.append(final_decision)
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 def _run_analysis(run_id, ticker, trade_date, analysts, provider, deep_model, quick_model, debate_rounds, risk_rounds, news_dir=""):
@@ -140,14 +255,33 @@ def _run_analysis(run_id, ticker, trade_date, analysts, provider, deep_model, qu
             raise RuntimeError("Graph produced no final state")
 
         safe_ticker = ticker.replace("/", "_").replace("\\", "_")
-        report_dir = Path(cfg["results_dir"]) / safe_ticker / "TradingAgentsStrategy_logs"
+        report_dir = Path(cfg["results_dir"]) / safe_ticker
         report_dir.mkdir(parents=True, exist_ok=True)
-        html_path = report_dir / f"report_{trade_date}.html"
-                # Look up stock name
+        # Look up stock name
         code_num = ticker.replace(".SH","").replace(".SZ","").replace(".BJ","")
         stock_name = _A_SHARE_NAMES.get(code_num, "")
+        # Fallback: check watchlist
+        if not stock_name:
+            try:
+                from tradingagents.dataflows.local_db import scan_watchlist
+                wl = scan_watchlist()
+                for wl_code, info in wl.items():
+                    if info.get("symbol", "") == ticker:
+                        stock_name = info.get("name", "")
+                        break
+            except Exception:
+                pass
+        # Build filename: 中文名_代码_日期_时分.html
+        label = stock_name or ticker
+        now_str = datetime.now().strftime("%H%M")
+        html_path = report_dir / f"{label}_{code_num}_{trade_date}_{now_str}.html"
         html_content = build_html_report(final_state, ticker, trade_date, stock_name)
         html_path.write_text(html_content, encoding="utf-8")
+
+        # Generate Markdown report alongside HTML
+        md_path = report_dir / f"{label}_{code_num}_{trade_date}_{now_str}.md"
+        md_content = _build_markdown_report(final_state, ticker, trade_date, stock_name)
+        md_path.write_text(md_content, encoding="utf-8")
 
         decision = graph.process_signal(final_state.get("final_trade_decision", ""))
         _active_runs[run_id]["html_path"] = str(html_path)
@@ -305,21 +439,30 @@ async def list_reports():
     import re
     from tradingagents.dataflows.local_db import scan_watchlist
     results = []
-    logs_dir = Path(DEFAULT_CONFIG["results_dir"])
+    logs_dir = RESULTS_DIR
     if not logs_dir.exists():
         return results
     
     for ticker_dir in sorted(logs_dir.iterdir()):
         if not ticker_dir.is_dir():
             continue
-        report_subdir = ticker_dir / "TradingAgentsStrategy_logs"
+        report_subdir = ticker_dir
         if not report_subdir.exists():
             continue
         
-        # Find HTML reports
-        for html_file in sorted(report_subdir.glob("report_*.html"), reverse=True):
-            m = re.match(r"report_(.*)\.html", html_file.name)
-            trade_date = m.group(1) if m else ""
+        # Find HTML reports (supports both: 名_码_日期_时分.html and report_日期.html)
+        for html_file in sorted(report_subdir.glob("*.html"), reverse=True):
+            fname = html_file.name
+            # New format: 日月股份_603218_2026-06-23_1908.html
+            m = re.match(r".*_(\d{4}-\d{2}-\d{2})_\d{4}\.html$", fname)
+            if m:
+                trade_date = m.group(1)
+            else:
+                # Old format: report_2026-06-23.html
+                m2 = re.match(r"report_(.*)\.html", fname)
+                trade_date = m2.group(1) if m2 else ""
+            if not trade_date:
+                continue
             
             # Try to extract decision from the HTML
             html_text = html_file.read_text(encoding="utf-8", errors="ignore")
@@ -361,14 +504,12 @@ async def list_reports():
 async def view_report(ticker: str, trade_date: str):
     """View a generated report by ticker and date."""
     safe_ticker = ticker.replace("/", "_").replace("\\", "_")
-    report_path = (
-        Path(DEFAULT_CONFIG["results_dir"]) 
-        / safe_ticker 
-        / "TradingAgentsStrategy_logs" 
-        / f"report_{trade_date}.html"
-    )
-    if report_path.exists():
-        return FileResponse(str(report_path), media_type="text/html")
+    report_dir = RESULTS_DIR / safe_ticker
+    if report_dir.exists():
+        # Match both new format (名_码_日期_时分.html) and old format (report_日期.html)
+        candidates = sorted(report_dir.glob(f"*{trade_date}*.html"), reverse=True)
+        if candidates:
+            return FileResponse(str(candidates[0]), media_type="text/html")
     return HTMLResponse("<h2>报告未找到</h2>", status_code=404)
 
 @app.get("/api/report/{run_id}")

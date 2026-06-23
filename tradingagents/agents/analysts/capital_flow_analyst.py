@@ -5,6 +5,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_capital_flow,
     get_indicators,
     get_language_instruction,
+    get_reporting_rules,
     get_stock_data,
 )
 
@@ -62,6 +63,7 @@ def create_capital_flow_analyst(llm):
             " capital flow rating, major order trends, volume-price signal,"
             " and smart money positioning."
             + get_language_instruction()
+            + get_reporting_rules()
         )
 
         prompt = ChatPromptTemplate.from_messages(

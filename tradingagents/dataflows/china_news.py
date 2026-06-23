@@ -105,15 +105,59 @@ def _search_news(keyword: str, limit: int = 15) -> list[dict]:
     return sorted(results, key=lambda x: str(x.get("time", "")), reverse=True)[:limit]
 
 
+def _validate_news_time(time_str: str) -> tuple[str, bool]:
+    """Validate and clean a news timestamp. Returns (cleaned_str, is_valid)."""
+    if not time_str or not str(time_str).strip():
+        return "", False
+    now = datetime.now()
+    # Try common timestamp formats (Unix ms)
+    try:
+        ts = int(str(time_str).strip())
+        if ts > 1e12:  # milliseconds
+            dt = datetime.fromtimestamp(ts / 1000)
+        elif ts > 1e9:  # seconds
+            dt = datetime.fromtimestamp(ts)
+        else:
+            return str(time_str), False
+    except (ValueError, OSError):
+        # Try date string formats
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+            try:
+                dt = datetime.strptime(str(time_str)[:19], fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            # Can't parse — return as-is, don't filter
+            return str(time_str), True
+    # Future dates (more than 1 day ahead = data error)
+    if dt > now + timedelta(days=1):
+        return str(time_str), False
+    # Too old (before 2024-01-01 = likely timestamp error)
+    if dt < datetime(2024, 1, 1):
+        return str(time_str), False
+    return dt.strftime("%Y-%m-%d %H:%M"), True
+
+
 def _format_news(news_list: list[dict], title: str) -> str:
     if not news_list:
         return f"# {title}\n暂无相关新闻数据\n"
-    lines = [f"# {title}", f"# 共 {len(news_list)} 条", ""]
-    for i, n in enumerate(news_list, 1):
+    valid_news = []
+    skipped = 0
+    for n in news_list:
+        clean_time, is_valid = _validate_news_time(n.get("time", ""))
+        if not is_valid:
+            skipped += 1
+            continue
+        n["_clean_time"] = clean_time
+        valid_news.append(n)
+    lines = [f"# {title}", f"# 共 {len(valid_news)} 条" +
+             (f"（已过滤 {skipped} 条异常时间戳）" if skipped else ""), ""]
+    for i, n in enumerate(valid_news, 1):
         lines.append(f"### {i}. {n['title']}")
         if n.get("intro"):
             lines.append(f"> {n['intro'][:200]}")
-        lines.append(f"- 来源: {n.get('source', '')}  |  时间: {n.get('time', '')}")
+        lines.append(f"- 来源: {n.get('source', '')}  |  时间: {n.get('_clean_time', n.get('time', ''))}")
         if n.get("url"):
             lines.append(f"- 链接: {n['url']}")
         lines.append("")

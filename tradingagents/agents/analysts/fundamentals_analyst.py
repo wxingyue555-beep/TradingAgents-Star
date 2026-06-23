@@ -7,6 +7,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_income_statement,
     get_instrument_context_from_state,
     get_language_instruction,
+    get_reporting_rules,
 )
 
 
@@ -26,7 +27,13 @@ def create_fundamentals_analyst(llm):
             "You are a researcher tasked with analyzing fundamental information over the past week about a company. Please write a comprehensive report of the company's fundamental information such as financial documents, company profile, basic company financials, and company financial history to gain a full view of the company's fundamental information to inform traders. Make sure to include as much detail as possible. Provide specific, actionable insights with supporting evidence to help traders make informed decisions."
             + " Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."
             + " Use the available tools: `get_fundamentals` for comprehensive company analysis, `get_balance_sheet`, `get_cashflow`, and `get_income_statement` for specific financial statements."
-            + get_language_instruction(),
+            + "\n\n**CRITICAL: Anti-Hallucination Rules**"
+            + "\n- Only report financial figures that are explicitly returned by the tools. Do NOT fabricate multi-period comparisons (e.g. H1 vs Q3 vs full-year) unless the tools return them."
+            + "\n- If quarterly or half-year breakdown data is not in the tool output, do not guess or invent it — state '历史财务数据未在工具返回中提供'."
+            + "\n- If you see contradictory numbers (e.g. full-year < half-year revenue), flag it explicitly as a possible data quality issue rather than trying to explain it away."
+            + "\n- Mark every numerical claim with its source: tool name or '[工具未返回]'."
+            + get_language_instruction()
+            + get_reporting_rules(),
         )
 
         prompt = ChatPromptTemplate.from_messages(

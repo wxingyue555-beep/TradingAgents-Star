@@ -45,3 +45,21 @@ def get_local_stock_quote(symbol: Annotated[str,"A股代码"]) -> str:
             f"代码: {symbol}\n日期: {ds}\n开盘: {_safe_div(r.get('open',0),100)}\n"
             f"最高: {_safe_div(r.get('high',0),100)}\n最低: {_safe_div(r.get('low',0),100)}\n"
             f"最新价: {_safe_div(r.get('close',0),100)}\n成交量: {int(r.get('volume',0))}\n成交额: {r.get('amount',0)}\n")
+
+
+def get_local_kline_raw(symbol: str, start_date: str, end_date: str) -> list[float]:
+    """Return a list of close prices (元) between start_date and end_date inclusive.
+    
+    Used by the reflection/alpha calculator as a yfinance-free replacement.
+    Returns an empty list if no data is found.
+    """
+    code = _extract_code(symbol)
+    if code == 0:
+        return []
+    si, ei = int(start_date.replace("-", "")), int(end_date.replace("-", ""))
+    data = query_db(
+        f"SELECT close FROM daily_kline WHERE code={code} AND trade_date BETWEEN {si} AND {ei} ORDER BY trade_date",
+        db="stock", limit=100
+    )
+    rows = data.get("rows", [])
+    return [row["close"] / 100.0 for row in rows if row.get("close")]

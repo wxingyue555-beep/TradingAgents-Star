@@ -3,6 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_language_instruction,
+    get_reporting_rules,
     get_stock_data,
     get_indicators,
 )
@@ -26,6 +27,12 @@ def create_industry_chain_analyst(llm):
             " where this company sits in its industry value chain, analyze upstream and downstream"
             " dependencies, compare against sector peers, and identify sector-level trends that"
             " affect this stock's outlook."
+
+            "\n\n**CRITICAL: Anti-Hallucination Rules**"
+            "\n- NEVER fabricate market share, capacity, market size, or industry concentration percentages unless a tool explicitly returns them."
+            "\n- If no tool provides specific numbers, say '数据未提供' (data not provided) rather than inventing figures like '20-25% market share' or 'CR3 40-45%'."
+            "\n- Qualitative analysis is acceptable; specific unverifiable numbers are NOT."
+            "\n- If you cite a numerical claim, identify which tool call returned it or mark it as '[估算]' (estimate)."
 
             "\n\n**Industry Chain Analysis Framework:**"
 
@@ -70,6 +77,7 @@ def create_industry_chain_analyst(llm):
             " value chain position, competitive ranking, sector cycle phase,"
             " and key peer comparison metrics."
             + get_language_instruction()
+            + get_reporting_rules()
         )
 
         prompt = ChatPromptTemplate.from_messages(

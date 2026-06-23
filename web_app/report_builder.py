@@ -121,9 +121,13 @@ def build_html_report(final_state: dict, ticker: str, trade_date: str, stock_nam
 
     decision_text = final_decision
     dt = decision_text.lower()
-    if "买入" in dt or "buy" in dt or "增持" in dt or "overweight" in dt or "加仓" in dt:
+    if "买入" in dt or "buy" in dt:
         rating_badge = '<span class="badge badge-buy">买入</span>'
-    elif "卖出" in dt or "sell" in dt or "减持" in dt or "underweight" in dt or "减仓" in dt:
+    elif "增持" in dt or "overweight" in dt:
+        rating_badge = '<span class="badge badge-overweight">增持</span>'
+    elif "减持" in dt or "underweight" in dt or "减仓" in dt:
+        rating_badge = '<span class="badge badge-underweight">减持</span>'
+    elif "卖出" in dt or "sell" in dt:
         rating_badge = '<span class="badge badge-sell">卖出</span>'
     elif "持有" in dt or "hold" in dt or "观望" in dt or "中性" in dt or "neutral" in dt:
         rating_badge = '<span class="badge badge-hold">持有</span>'
@@ -182,6 +186,8 @@ def build_html_report(final_state: dict, ticker: str, trade_date: str, stock_nam
     .badge { display:inline-block; padding:6px 18px; border-radius:20px; font-weight:700; font-size:1.1em; margin-top:12px; }
     .badge-buy { background:#dafbe1; color:#1a7f37; }
     .badge-sell { background:#ffebe9; color:#cf222e; }
+    .badge-underweight { background:#fff1e6; color:#bc4c00; }
+    .badge-overweight { background:#ddf4ff; color:#0550ae; }
     .badge-hold { background:#fff8c5; color:#9a6700; }
     .badge-neutral { background:#f3f4f6; color:#656d76; }
     .section-group { margin-bottom:24px; }

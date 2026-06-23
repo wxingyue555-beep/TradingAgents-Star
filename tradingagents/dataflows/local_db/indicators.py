@@ -1,8 +1,18 @@
-"""技术指标 - 基于 daily_kline 本地计算 SMA/EMA/MACD/RSI/BOLL/KDJ"""
+"""技术指标 - 基于 daily_kline 本地计算 SMA/EMA/MACD/RSI/BOLL/KDJ/ATR"""
 from datetime import datetime, timedelta
 from typing import Annotated
 import pandas as pd
+import numpy as np
 from .config import query_dataframe, _extract_code
+
+# 指标支持状态
+_SUPPORTED = {
+    'sma', 'ma', 'ema', 'macd', 'macds', 'macdh',
+    'rsi', 'rsi_6', 'rsi_12', 'rsi_24',
+    'boll', 'bollinger', 'boll_ub', 'boll_lb',
+    'kdj', 'atr',
+}
+_UNSUPPORTED_MSG = "⚠️ 指标 '{indicator}' 暂不支持（本地数据库只能计算 SMA/EMA/MACD/RSI/BOLL/KDJ/ATR）。请使用已支持的指标，不要编造数值。"
 
 def get_local_indicators(symbol: Annotated[str,"A股代码"], indicator: Annotated[str,"指标类型"], curr_date: Annotated[str,"当前日期 yyyy-mm-dd"], look_back_days: Annotated[int,"回顾天数"]) -> str:
     code = _extract_code(symbol)
@@ -13,8 +23,9 @@ def get_local_indicators(symbol: Annotated[str,"A股代码"], indicator: Annotat
     if df.empty: return f"No data for {symbol}"
     for c in ["open","high","low","close"]:
         if c in df.columns: df[c] = df[c].astype(float)/100.0
+    if "volume" in df.columns: df["volume"] = df["volume"].astype(float)
     df["Date"] = pd.to_datetime(df["trade_date"].astype(str), format="%Y%m%d", errors="coerce")
-        # Map common indicator names to local_db supported types
+    # Map common indicator names to local_db supported types
     name_map = {
         'close_50_sma': 'sma', 'close_200_sma': 'sma', 'close_10_ema': 'ema',
         'close_20_ema': 'ema', 'close_50_ema': 'ema',
@@ -22,11 +33,13 @@ def get_local_indicators(symbol: Annotated[str,"A股代码"], indicator: Annotat
         'macd_line': 'macd', 'macds': 'macd', 'macdh': 'macd',
         'rsi_6': 'rsi', 'rsi_12': 'rsi', 'rsi_24': 'rsi',
         'boll_ub': 'boll', 'boll_lb': 'boll', 'bollinger': 'boll',
-        'atr': 'sma', 'vwma': 'sma', 'volume': 'sma',
-        'close_10_sma': 'sma', 'close_20_sma': 'sma',
+        'atr': 'atr',
     }
     ind = indicator.lower().strip()
     ind = name_map.get(ind, ind)
+    # Reject unsupported indicators
+    if ind not in _SUPPORTED:
+        return _UNSUPPORTED_MSG.format(indicator=indicator)
     lines = []
     if ind in ("sma","ma"):
         for w in [5,10,20,60]:
@@ -60,5 +73,20 @@ def get_local_indicators(symbol: Annotated[str,"A股代码"], indicator: Annotat
             rsv = (df["close"]-ln)/(hn-ln)*100; k = rsv.ewm(com=2,adjust=False).mean()
             d = k.ewm(com=2,adjust=False).mean(); j = 3*k-2*d
             if pd.notna(k.iloc[-1]): lines.extend([f"K: {k.iloc[-1]:.2f}",f"D: {d.iloc[-1]:.2f}",f"J: {j.iloc[-1]:.2f}"])
+    elif ind == "atr":
+        w = 14
+        if len(df) >= w + 1:
+            high = df["high"]; low = df["low"]; close = df["close"]
+            tr = pd.concat([
+                high - low,
+                (high - close.shift()).abs(),
+                (low - close.shift()).abs(),
+            ], axis=1).max(axis=1)
+            atr_val = tr.rolling(w).mean().iloc[-1]
+            if pd.notna(atr_val):
+                lines.append(f"ATR(14): {atr_val:.3f}")
+                lines.append(f"ATR/Close: {atr_val/float(df['close'].iloc[-1])*100:.1f}%")
+            else:
+                lines.append("ATR: 计算数据不足")
     result = f"# {symbol} 技术指标 - {indicator.upper()}\n# 回顾: {start_dt.strftime('%Y-%m-%d')} ~ {curr_date}\n# 来源: 本地通达信数据库\n\n"
     return result + ("\n".join(lines) if lines else f"指标 {indicator} 暂不支持")

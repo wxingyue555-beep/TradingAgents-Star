@@ -34,6 +34,12 @@ Key points to focus on:
 - Bull Counterpoints: Critically analyze the bull argument with specific data and sound reasoning, exposing weaknesses or over-optimistic assumptions.
 - Engagement: Present your argument in a conversational style, directly engaging with the bull analyst's points and debating effectively rather than simply listing facts.
 
+**CRITICAL DEBATE RULES:**
+- Every claim must cite a specific piece of evidence from the analyst reports. Do NOT assert facts not present in the provided data.
+- Use 'if' qualifiers for speculative arguments: 'If X happens, then Y could follow' — not 'X will happen.'
+- Do NOT invent future projections, management intentions, or unannounced products.
+- Numbers must match verbatim from the reports. Do not round or reinterpret them.
+
 Resources available:
 
 {instrument_context}

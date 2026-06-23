@@ -25,13 +25,19 @@ def create_bull_researcher(llm):
         )
 
         prompt = f"""You are a Bull Analyst advocating for investing in the {target_label}. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
-
+ 
 Key points to focus on:
 - Growth Potential: Highlight the company's market opportunities, revenue projections, and scalability.
 - Competitive Advantages: Emphasize factors like unique products, strong branding, or dominant market positioning.
 - Positive Indicators: Use financial health, industry trends, and recent positive news as evidence.
 - Bear Counterpoints: Critically analyze the bear argument with specific data and sound reasoning, addressing concerns thoroughly and showing why the bull perspective holds stronger merit.
 - Engagement: Present your argument in a conversational style, engaging directly with the bear analyst's points and debating effectively rather than just listing data.
+
+**CRITICAL DEBATE RULES:**
+- Every claim must cite a specific piece of evidence from the analyst reports. Do NOT assert facts not present in the provided data.
+- Use 'if' qualifiers for speculative arguments: 'If X happens, then Y could follow' — not 'X will happen.'
+- Do NOT invent future projections, management intentions, or unannounced products.
+- Numbers must match verbatim from the reports. Do not round or reinterpret them.
 
 Resources available:
 {instrument_context}

@@ -1,36 +1,17 @@
+"""Data vendor routing — A-share / 港股通 local-only mode.
+
+All foreign vendors (yfinance, Alpha Vantage, FRED, Polymarket) have been removed.
+Only local_db (通达信) and china_news (新浪/财联社/东方财富) remain active.
+"""
 import logging
 
-from .alpha_vantage import (
-    get_balance_sheet as get_alpha_vantage_balance_sheet,
-    get_cashflow as get_alpha_vantage_cashflow,
-    get_fundamentals as get_alpha_vantage_fundamentals,
-    get_global_news as get_alpha_vantage_global_news,
-    get_income_statement as get_alpha_vantage_income_statement,
-    get_indicator as get_alpha_vantage_indicator,
-    get_insider_transactions as get_alpha_vantage_insider_transactions,
-    get_news as get_alpha_vantage_news,
-    get_stock as get_alpha_vantage_stock,
-)
 from .config import get_config
 from .errors import (
     NoMarketDataError,
     VendorNotConfiguredError,
     VendorRateLimitError,
 )
-from .fred import get_macro_data as get_fred_macro_data
-from .polymarket import get_prediction_markets as get_polymarket_prediction_markets
-from .y_finance import (
-    get_balance_sheet as get_yfinance_balance_sheet,
-    get_cashflow as get_yfinance_cashflow,
-    get_fundamentals as get_yfinance_fundamentals,
-    get_income_statement as get_yfinance_income_statement,
-    get_insider_transactions as get_yfinance_insider_transactions,
-    get_stock_stats_indicators_window,
-    get_YFin_data_online,
-)
-from .yfinance_news import get_global_news_yfinance, get_news_yfinance
-# ===== LOCAL_DB PATCH BEGIN =====
-# 本地通达信 SQLite 数据库 HTTP API (新增vendor)
+# ===== Local Chinese data sources =====
 from .china_news import get_china_stock_news, get_china_global_news
 from .local_db import (
     get_local_stock_data,
@@ -43,7 +24,6 @@ from .local_db import (
     get_local_news,
     get_local_global_news,
 )
-# ===== LOCAL_DB PATCH END =====
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +52,7 @@ TOOLS_CATEGORIES = {
         ]
     },
     "news_data": {
-        "description": "News and insider data",
+        "description": "A-share news and announcements",
         "tools": [
             "get_news",
             "get_global_news",
@@ -80,13 +60,13 @@ TOOLS_CATEGORIES = {
         ]
     },
     "macro_data": {
-        "description": "Macroeconomic indicators (rates, inflation, labor, growth)",
+        "description": "Macro indicators (currently unavailable in local mode)",
         "tools": [
             "get_macro_indicators",
         ]
     },
     "prediction_markets": {
-        "description": "Market-implied probabilities for forward-looking events",
+        "description": "Prediction markets (currently unavailable in local mode)",
         "tools": [
             "get_prediction_markets",
         ]
@@ -94,83 +74,55 @@ TOOLS_CATEGORIES = {
 }
 
 VENDOR_LIST = [
-    "yfinance",
-    "fred",
-    "polymarket",
-    "alpha_vantage",
+    "local_db",
+    "china_news",
 ]
 
-# Optional enrichment categories. These add macro/event context to the news
-# analyst but are not core to a decision, so a vendor failure here degrades to a
-# sentinel instead of aborting the run (a bad LLM-supplied indicator, a missing
-# key, or a network blip should not crash an analysis over flavour data). Core
-# categories (prices, fundamentals, news) still raise so a broken primary is loud.
+# Categories that degrade gracefully when no vendor can serve them.
 OPTIONAL_CATEGORIES = {"macro_data", "prediction_markets"}
 
-# Mapping of methods to their vendor-specific implementations
+# Mapping of methods to vendor implementations (local sources only).
 VENDOR_METHODS = {
     # core_stock_apis
     "get_stock_data": {
-        "alpha_vantage": get_alpha_vantage_stock,
-        "yfinance": get_YFin_data_online,
         "local_db": get_local_stock_data,
     },
     # technical_indicators
     "get_indicators": {
-        "alpha_vantage": get_alpha_vantage_indicator,
-        "yfinance": get_stock_stats_indicators_window,
         "local_db": get_local_indicators,
     },
     # fundamental_data
     "get_fundamentals": {
-        "alpha_vantage": get_alpha_vantage_fundamentals,
-        "yfinance": get_yfinance_fundamentals,
         "local_db": get_local_fundamentals,
     },
     "get_balance_sheet": {
-        "alpha_vantage": get_alpha_vantage_balance_sheet,
-        "yfinance": get_yfinance_balance_sheet,
         "local_db": get_local_balance_sheet,
     },
     "get_cashflow": {
-        "alpha_vantage": get_alpha_vantage_cashflow,
-        "yfinance": get_yfinance_cashflow,
         "local_db": get_local_cashflow,
     },
     "get_income_statement": {
-        "alpha_vantage": get_alpha_vantage_income_statement,
-        "yfinance": get_yfinance_income_statement,
         "local_db": get_local_income_statement,
     },
     # news_data
     "get_news": {
-        "alpha_vantage": get_alpha_vantage_news,
-        "yfinance": get_news_yfinance,
         "local_db": get_local_news,
         "china_news": get_china_stock_news,
     },
     "get_global_news": {
-        "yfinance": get_global_news_yfinance,
-        "alpha_vantage": get_alpha_vantage_global_news,
         "local_db": get_local_global_news,
         "china_news": get_china_global_news,
     },
     "get_insider_transactions": {
-        "alpha_vantage": get_alpha_vantage_insider_transactions,
-        "yfinance": get_yfinance_insider_transactions,
+        # No local source available — gracefully unavailable
     },
-    # capital_flow (A-share)
+    # capital_flow (A-share only)
     "get_capital_flow": {
         "local_db": get_local_capital_flow,
     },
-    # macro_data
-    "get_macro_indicators": {
-        "fred": get_fred_macro_data,
-    },
-    # prediction_markets
-    "get_prediction_markets": {
-        "polymarket": get_polymarket_prediction_markets,
-    },
+    # macro_data and prediction_markets: no local vendors available
+    "get_macro_indicators": {},
+    "get_prediction_markets": {},
 }
 
 def get_category_for_method(method: str) -> str:
@@ -207,9 +159,8 @@ def route_to_vendor(method: str, *args, **kwargs):
     all_available_vendors = list(VENDOR_METHODS[method].keys())
 
     # The configured vendor list IS the chain: we do NOT silently fall back to
-    # vendors the user did not choose (#988/#289) — that returned data from an
-    # unexpected source and caused cross-vendor inconsistencies. For multi-vendor
-    # fallback, list them in order, e.g. data_vendors="yfinance,alpha_vantage".
+    # vendors the user did not choose. For multi-vendor fallback, list them in
+    # order, e.g. data_vendors="china_news,local_db".
     # The "default" sentinel (no explicit config) uses all available vendors.
     explicit = [v for v in primary_vendors if v and v != "default"]
     if explicit:
@@ -221,6 +172,16 @@ def route_to_vendor(method: str, *args, **kwargs):
             )
     else:
         vendor_chain = all_available_vendors
+
+    # If no vendors are configured at all (e.g. get_macro_indicators with no local source),
+    # return a clean unavailable sentinel.
+    if not vendor_chain:
+        if category in OPTIONAL_CATEGORIES:
+            return (
+                f"DATA_UNAVAILABLE: {category} is not available in local A-share mode. "
+                f"No Chinese data source is configured for this category. Proceed without it."
+            )
+        raise RuntimeError(f"No vendor available for '{method}' in local A-share mode")
 
     last_no_data: NoMarketDataError | None = None
     first_error: Exception | None = None
@@ -236,28 +197,20 @@ def route_to_vendor(method: str, *args, **kwargs):
         except VendorNotConfiguredError as e:
             logger.warning("Vendor %r not configured for %s; trying next vendor.", vendor, method)
             if first_error is None:
-                first_error = e  # Surface it if no other vendor can serve the call.
+                first_error = e
             continue
         except NoMarketDataError as e:
-            last_no_data = e  # No data here; another configured vendor may have it
+            last_no_data = e
             continue
         except Exception as e:
-            # Don't let one vendor's failure crash the call when another can
-            # serve it, but never swallow silently: a broken primary must be
-            # visible in the logs (#989), not hidden behind a fallback's verdict.
             logger.warning("Vendor %r failed for %s: %s", vendor, method, e)
             if first_error is None:
                 first_error = e
             continue
 
     # If any vendor reported "no data", the symbol is genuinely unavailable.
-    # Return one explicit, instructive sentinel rather than a vendor-specific
-    # empty string, so the agent reports "unavailable" instead of inventing a
-    # value. This takes precedence over incidental fallback errors.
     if last_no_data is not None:
         if first_error is not None:
-            # A vendor also hit a real error; surface it in logs so the no-data
-            # verdict can't hide a broken primary (network/auth/etc.).
             logger.warning(
                 "Returning NO_DATA for %s, but a vendor errored earlier: %s",
                 method, first_error,
@@ -265,9 +218,6 @@ def route_to_vendor(method: str, *args, **kwargs):
         sym = last_no_data.symbol
         canonical = last_no_data.canonical
         resolved = "" if canonical == sym else f" (resolved to '{canonical}')"
-        # Surface the typed error's detail (e.g. "latest row is 2025-06-11 ...
-        # stale") so the agent sees the specific reason — invalid symbol, no
-        # coverage, or stale data — not just a generic "unavailable".
         reason = f" ({last_no_data.detail})" if last_no_data.detail else ""
         return (
             f"NO_DATA_AVAILABLE: No usable market data for '{sym}'{resolved} from "
@@ -276,10 +226,6 @@ def route_to_vendor(method: str, *args, **kwargs):
             f"fabricate values — report that data is unavailable for this symbol."
         )
 
-    # No vendor returned data and none reported clean "no data" — surface the
-    # first real error (e.g. the primary vendor's network failure). Optional
-    # enrichment categories degrade to a sentinel instead, so flavour data can't
-    # abort the run.
     if first_error is not None:
         if category in OPTIONAL_CATEGORIES:
             logger.warning("Optional %s unavailable for %s: %s", category, method, first_error)

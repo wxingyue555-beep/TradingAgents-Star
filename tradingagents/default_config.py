@@ -130,8 +130,8 @@ DEFAULT_CONFIG = _apply_env_overrides({
         "technical_indicators": "local_db",  # Options: local_db, yfinance, alpha_vantage
         "fundamental_data": "local_db",      # Options: local_db, yfinance, alpha_vantage
         "news_data": "china_news",             # Options: local_db, yfinance, alpha_vantage
-        "macro_data": "fred",                # Options: fred (needs FRED_API_KEY)
-        "prediction_markets": "polymarket",  # Options: polymarket (keyless)
+        "macro_data": "",                    # No local macro source available yet
+        "prediction_markets": "",           # No local prediction market source
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
@@ -139,21 +139,13 @@ DEFAULT_CONFIG = _apply_env_overrides({
     },
     # Benchmark for alpha calculation in the reflection layer.
     # ``benchmark_ticker`` (when set) overrides the suffix map for all
-    # tickers; leave it None to use ``benchmark_map`` for auto-detection
-    # based on the ticker's exchange suffix. SPY remains the US default
-    # so the reflection label keeps reading "Alpha vs SPY" for US tickers
-    # while non-US tickers get their regional index automatically.
+    # tickers; leave it None to use ``benchmark_map`` for auto-detection.
+    # Default for Chinese A-shares (no suffix): 000001.SH (上证指数).
     "benchmark_ticker": None,
     "benchmark_map": {
-        ".NS":  "^NSEI",       # NSE India (Nifty 50)
-        ".BO":  "^BSESN",      # BSE India (Sensex)
-        ".T":   "^N225",       # Tokyo (Nikkei 225)
-        ".HK":  "^HSI",        # Hong Kong (Hang Seng)
-        ".L":   "^FTSE",       # London (FTSE 100)
-        ".TO":  "^GSPTSE",     # Toronto (TSX Composite)
-        ".AX":  "^AXJO",       # Australia (ASX 200)
-        ".SS":  "000001.SS",   # Shanghai (SSE Composite)
+        ".HK":  "^HSI",        # Hong Kong (Hang Seng Index)
+        ".SS":  "000001.SH",   # Shanghai (SSE Composite)
         ".SZ":  "399001.SZ",   # Shenzhen (SZSE Component)
-        "":     "SPY",         # default for US-listed tickers (no suffix)
+        "":     "000001.SH",   # default for A-shares (上证指数)
     },
 })
