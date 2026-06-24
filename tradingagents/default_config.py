@@ -2,6 +2,11 @@ import os
 
 _TRADINGAGENTS_HOME = os.path.join(os.path.expanduser("~"), ".tradingagents")
 
+if os.name == "nt":
+    _DEFAULT_RESULTS_DIR = r"D:\BaiduSyncdisk\data\outroport"
+else:
+    _DEFAULT_RESULTS_DIR = os.path.join(os.path.expanduser("~"), "gupiao", "data", "outroport")
+
 # Single source of truth for env-var → config-key overrides. To expose
 # a new config key for environment-based override, add a row here — no
 # entry-point script changes required. Coercion is driven by the type
@@ -69,7 +74,7 @@ def _apply_env_overrides(config: dict) -> dict:
 
 DEFAULT_CONFIG = _apply_env_overrides({
     "project_dir": os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
-    "results_dir": os.getenv("TRADINGAGENTS_RESULTS_DIR", os.path.join(_TRADINGAGENTS_HOME, "logs")),
+    "results_dir": os.getenv("TRADINGAGENTS_RESULTS_DIR", _DEFAULT_RESULTS_DIR),
     "data_cache_dir": os.getenv("TRADINGAGENTS_CACHE_DIR", os.path.join(_TRADINGAGENTS_HOME, "cache")),
     "memory_log_path": os.getenv("TRADINGAGENTS_MEMORY_LOG_PATH", os.path.join(_TRADINGAGENTS_HOME, "memory", "trading_memory.md")),
     # Optional cap on the number of resolved memory log entries. When set,

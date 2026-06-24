@@ -2,6 +2,7 @@
 import asyncio
 import json
 import logging
+import os
 import queue
 import threading
 import uuid
@@ -27,7 +28,10 @@ app = FastAPI(title="TradingAgents Web", version="2.0")
 
 BASE_DIR = Path(__file__).parent
 PROJECT_ROOT = BASE_DIR.parent
-RESULTS_DIR = PROJECT_ROOT / "report"
+if os.name == "nt":
+    RESULTS_DIR = Path(r"D:\BaiduSyncdisk\data\outroport")
+else:
+    RESULTS_DIR = Path.home() / "gupiao" / "data" / "outroport"
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
