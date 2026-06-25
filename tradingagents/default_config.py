@@ -5,7 +5,7 @@ _TRADINGAGENTS_HOME = os.path.join(os.path.expanduser("~"), ".tradingagents")
 if os.name == "nt":
     _DEFAULT_RESULTS_DIR = r"D:\BaiduSyncdisk\data\outroport"
 else:
-    _DEFAULT_RESULTS_DIR = os.path.join(os.path.expanduser("~"), "gupiao", "data", "outroport")
+    _DEFAULT_RESULTS_DIR = "/media/star-linux/文件盘/BaiduSyncdisk/data/outroport"
 
 # Single source of truth for env-var → config-key overrides. To expose
 # a new config key for environment-based override, add a row here — no

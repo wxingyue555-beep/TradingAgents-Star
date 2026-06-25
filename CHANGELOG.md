@@ -10,6 +10,12 @@ Breaking changes within the 0.x line are called out explicitly.
 
 ### Fixed
 
+- **Starlette / Jinja2 version incompatibility in web app.** `jinja2==3.1.6`
+  + `starlette>=1.3` caused `TypeError: unhashable type: 'dict'` in template
+  cache key computation. Pinned to `jinja2==3.1.5` and `starlette==1.2.1`.
+- **Starlette TemplateResponse API break in web app.** Starlette >=1.2 moved
+  `request` to the first positional argument. Added runtime signature detection
+  to keep compatibility with both old and new versions.
 - **Hardcoded yfinance path in verified market snapshot.** `market_data_validator`
   bypassed the `interface.py` vendor router and called `load_ohlcv` → `yf.download()`
   directly, causing `No market data` failures for A-share tickers (`.SH`/`.SZ`)
@@ -28,6 +34,20 @@ Breaking changes within the 0.x line are called out explicitly.
 
 - `get_local_ohlcv_dataframe()` in `local_db/kline.py` — returns a pandas
   DataFrame of OHLCV data from the local database for indicator computation.
+
+- **Report list extracts Chinese stock names from filenames.** The `/api/reports`
+  endpoint now reads names from the `中文名_代码_日期_时分.html` file pattern before
+  falling back to the built-in dictionary, covering stocks not in `_A_SHARE_NAMES`.
+- **One-click Linux launcher.** `start.sh` at the project root auto-activates
+  `.venv`, sets the API key, creates the output directory, clears port conflicts,
+  and starts uvicorn. A matching `.desktop` file in `assets/` provides double-click
+  desktop launch.
+
+### Changed
+
+- **Linux output directory default.** `web_app/main.py` and `default_config.py`
+  now use `/media/star-linux/文件盘/BaiduSyncdisk/data/outroport` (Baidu Sync
+  Disk) on Linux, mirroring the Windows path convention.
 
 ## [0.3.0] — 2026-06-22
 

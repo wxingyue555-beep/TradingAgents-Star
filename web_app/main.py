@@ -1,5 +1,6 @@
 """TradingAgents Web Interface — FastAPI + SSE + HTML Reports."""
 import asyncio
+import inspect
 import json
 import logging
 import os
@@ -31,10 +32,14 @@ PROJECT_ROOT = BASE_DIR.parent
 if os.name == "nt":
     RESULTS_DIR = Path(r"D:\BaiduSyncdisk\data\outroport")
 else:
-    RESULTS_DIR = Path.home() / "gupiao" / "data" / "outroport"
+    RESULTS_DIR = Path("/media/star-linux/文件盘/BaiduSyncdisk/data/outroport")
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+# Starlette >=1.2 把 request 移到了 TemplateResponse 的第一个参数
+_starlette_params = list(inspect.signature(templates.TemplateResponse).parameters.keys())
+_TEMPLATE_REQUEST_FIRST = _starlette_params[:2] == ["request", "name"]
 
 _active_runs: dict[str, dict] = {}
 
@@ -71,7 +76,7 @@ NODE_LABELS = {
 class AnalyzeRequest(BaseModel):
     ticker: str = "600000.SH"
     trade_date: str = "2026-06-20"
-    analysts: str = "market,social,news,fundamentals,industry_chain,capital_flow"
+    analysts: str = "market,news,fundamentals,industry_chain,capital_flow"
     provider: str = "deepseek"
     deep_model: str = "deepseek-v4-pro"
     quick_model: str = "deepseek-v4-flash"
@@ -299,7 +304,10 @@ def _run_analysis(run_id, ticker, trade_date, analysts, provider, deep_model, qu
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    if _TEMPLATE_REQUEST_FIRST:
+        return templates.TemplateResponse(request, "index.html")
+    else:
+        return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/api/analyze/stream")
@@ -447,6 +455,10 @@ async def list_reports():
     if not logs_dir.exists():
         return results
     
+    # 文件名格式: 中文名_代码_日期_时分.html 如 金海高科_603311_2026-06-23_2214.html
+    _name_from_fname = re.compile(r"^(.+?)_(\d{6})_(\d{4}-\d{2}-\d{2})_\d{4}\.html$")
+    _ticker_like = re.compile(r"^\d{6}(\.\w+)?$")  # 纯代码不算中文名
+
     for ticker_dir in sorted(logs_dir.iterdir()):
         if not ticker_dir.is_dir():
             continue
@@ -457,6 +469,9 @@ async def list_reports():
         # Find HTML reports (supports both: 名_码_日期_时分.html and report_日期.html)
         for html_file in sorted(report_subdir.glob("*.html"), reverse=True):
             fname = html_file.name
+            # 优先从文件名提取中文名
+            nm = _name_from_fname.match(fname)
+            fname_name = nm.group(1) if nm and not _ticker_like.match(nm.group(1)) else ""
             # New format: 日月股份_603218_2026-06-23_1908.html
             m = re.match(r".*_(\d{4}-\d{2}-\d{2})_\d{4}\.html$", fname)
             if m:
@@ -481,7 +496,7 @@ async def list_reports():
             
             # Look up stock name
             code_num = ticker_dir.name.replace(".SH","").replace(".SZ","").replace(".BJ","")
-            stock_name = _A_SHARE_NAMES.get(code_num, "")
+            stock_name = fname_name or _A_SHARE_NAMES.get(code_num, "")
             # Also check watchlist
             if not stock_name:
                 wl = scan_watchlist()

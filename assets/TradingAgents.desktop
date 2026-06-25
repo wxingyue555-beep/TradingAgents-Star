@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=TradingAgents
+Comment=AI 多智能体交易分析平台
+Exec=bash -c "cd /media/star-linux/文件盘/Github/TradingAgents-Star && bash start.sh"
+Path=/media/star-linux/文件盘/Github/TradingAgents-Star
+Terminal=true
+Categories=Finance;Office;
