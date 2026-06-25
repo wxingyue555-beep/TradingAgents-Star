@@ -6,6 +6,8 @@ doesn't support (#830). This module computes a ground-truth snapshot (latest
 OHLCV row on or before the analysis date, common indicators, recent closes)
 the analyst is told to treat as the source of truth for any exact numeric
 claim. Deterministic, no LLM involved.
+
+All data comes from the local A-share database (通达信); no foreign vendors.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from collections.abc import Iterable
 import pandas as pd
 from stockstats import wrap
 
-from tradingagents.dataflows.stockstats_utils import load_ohlcv
+from tradingagents.dataflows.local_db.kline import get_local_ohlcv_dataframe
 
 # A fixed, common indicator set so the snapshot is the same shape every run.
 DEFAULT_SNAPSHOT_INDICATORS: tuple[str, ...] = (
@@ -28,18 +30,23 @@ DEFAULT_SNAPSHOT_INDICATORS: tuple[str, ...] = (
 def _verified_rows(symbol: str, curr_date: str) -> pd.DataFrame:
     """OHLCV on or before curr_date, date-sorted. Raises if nothing usable.
 
-    ``load_ohlcv`` already normalizes the Date column and filters out
-    look-ahead rows, but we re-apply the cutoff defensively — this is a
-    verification path, so it must not trust its input to be pre-filtered.
+    Pulls data from the local A-share database (通达信). A 5-year window
+    is fetched so stockstats can compute long-lookback indicators (200 SMA,
+    MACD, etc.). Rows after curr_date are filtered out to prevent
+    look-ahead bias.
     """
-    data = load_ohlcv(symbol, curr_date)
+    curr_dt = pd.to_datetime(curr_date)
+    start_dt = curr_dt - pd.DateOffset(years=5)
+    start_str = start_dt.strftime("%Y-%m-%d")
+
+    data = get_local_ohlcv_dataframe(symbol, start_str, curr_date)
     if data is None or data.empty:
-        raise ValueError(f"No OHLCV data available for {symbol}.")
+        raise ValueError(f"No OHLCV data available for {symbol} from local database.")
 
     df = data.copy()
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     df = df.dropna(subset=["Date"])
-    df = df[df["Date"] <= pd.to_datetime(curr_date)].sort_values("Date")
+    df = df[df["Date"] <= curr_dt].sort_values("Date")
     if df.empty:
         raise ValueError(f"No OHLCV rows on or before {curr_date} for {symbol}.")
     return df

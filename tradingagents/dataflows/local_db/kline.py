@@ -47,6 +47,35 @@ def get_local_stock_quote(symbol: Annotated[str,"A股代码"]) -> str:
             f"最新价: {_safe_div(r.get('close',0),100)}\n成交量: {int(r.get('volume',0))}\n成交额: {r.get('amount',0)}\n")
 
 
+def get_local_ohlcv_dataframe(symbol: str, start_date: str, end_date: str) -> "pd.DataFrame":
+    """Return OHLCV data as a pandas DataFrame with columns Date/Open/High/Low/Close/Volume.
+
+    Prices are divided by 100 to convert from the database's integer x100 format.
+    Used as a yfinance-free replacement for chart/indicator consumers.
+    """
+    import pandas as pd
+    code = _extract_code(symbol)
+    if code == 0:
+        return pd.DataFrame()
+    si, ei = int(start_date.replace("-", "")), int(end_date.replace("-", ""))
+    data = query_db(
+        f"SELECT trade_date,open,high,low,close,volume FROM daily_kline "
+        f"WHERE code={code} AND trade_date BETWEEN {si} AND {ei} ORDER BY trade_date",
+        db="stock", limit=10000
+    )
+    rows = data.get("rows", [])
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows, columns=["trade_date", "open", "high", "low", "close", "volume"])
+    df["Date"] = pd.to_datetime(df["trade_date"].astype(str), format="%Y%m%d")
+    df["Open"]   = df["open"].astype(float)   / 100.0
+    df["High"]   = df["high"].astype(float)   / 100.0
+    df["Low"]    = df["low"].astype(float)    / 100.0
+    df["Close"]  = df["close"].astype(float)  / 100.0
+    df["Volume"] = df["volume"].astype(float)
+    return df[["Date", "Open", "High", "Low", "Close", "Volume"]]
+
+
 def get_local_kline_raw(symbol: str, start_date: str, end_date: str) -> list[float]:
     """Return a list of close prices (元) between start_date and end_date inclusive.
     

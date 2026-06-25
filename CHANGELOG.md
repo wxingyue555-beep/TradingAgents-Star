@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking changes within the 0.x line are called out explicitly.
 
+## [0.3.1] — 2026-06-25
+
+### Fixed
+
+- **Hardcoded yfinance path in verified market snapshot.** `market_data_validator`
+  bypassed the `interface.py` vendor router and called `load_ohlcv` → `yf.download()`
+  directly, causing `No market data` failures for A-share tickers (`.SH`/`.SZ`)
+  that Yahoo Finance does not cover. Replaced with `get_local_ohlcv_dataframe`
+  from the local A-share database (通达信).
+
+### Changed
+
+- **Removed dead yfinance code.** `stockstats_utils.py` no longer imports yfinance;
+  `yf_retry`, `load_ohlcv`, and `StockstatsUtils` are deleted. `y_finance.py`
+  is replaced with a deprecation note — no active code path referenced it.
+- **Updated config docs.** `default_config.py` and `config.py` comments no longer
+  mention yfinance or Alpha Vantage as vendor options.
+
+### Added
+
+- `get_local_ohlcv_dataframe()` in `local_db/kline.py` — returns a pandas
+  DataFrame of OHLCV data from the local database for indicator computation.
+
 ## [0.3.0] — 2026-06-22
 
 Stabilization and extensibility release: a CI gate, a unified verified
@@ -398,6 +421,9 @@ PRs from late 2025 also landed here.
   portfolio manager. LangGraph orchestration, yfinance data, per-agent
   BM25 memory, single-provider OpenAI integration, interactive CLI.
 
+[0.3.1]: https://github.com/TauricResearch/TradingAgents/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.5...v0.3.0
+[0.2.5]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.1...v0.2.2

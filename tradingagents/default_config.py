@@ -129,18 +129,18 @@ DEFAULT_CONFIG = _apply_env_overrides({
     # Category-level configuration (default for all tools in category).
     # The configured value is the exact vendor chain — requests are NOT silently
     # routed to vendors you didn't choose. For ordered fallback, list several,
-    # e.g. "yfinance,alpha_vantage". "default" uses all available vendors.
+    # e.g. "china_news,local_db". "default" uses all available vendors.
     "data_vendors": {
-        "core_stock_apis": "local_db",       # Options: local_db, yfinance, alpha_vantage
-        "technical_indicators": "local_db",  # Options: local_db, yfinance, alpha_vantage
-        "fundamental_data": "local_db",      # Options: local_db, yfinance, alpha_vantage
-        "news_data": "china_news",             # Options: local_db, yfinance, alpha_vantage
+        "core_stock_apis": "local_db",       # Options: local_db
+        "technical_indicators": "local_db",  # Options: local_db
+        "fundamental_data": "local_db",      # Options: local_db
+        "news_data": "china_news",             # Options: local_db
         "macro_data": "",                    # No local macro source available yet
         "prediction_markets": "",           # No local prediction market source
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
-        # Example: "get_stock_data": "alpha_vantage",  # Override category default
+        # Example: "get_stock_data": "local_db",  # Override category default
     },
     # Benchmark for alpha calculation in the reflection layer.
     # ``benchmark_ticker`` (when set) overrides the suffix map for all
