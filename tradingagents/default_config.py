@@ -134,7 +134,7 @@ DEFAULT_CONFIG = _apply_env_overrides({
         "core_stock_apis": "local_db",       # Options: local_db
         "technical_indicators": "local_db",  # Options: local_db
         "fundamental_data": "local_db",      # Options: local_db
-        "news_data": "china_news",             # Options: local_db
+        "news_data": "local_news_api",          # Options: local_db, china_news, local_news_api
         "macro_data": "",                    # No local macro source available yet
         "prediction_markets": "",           # No local prediction market source
     },

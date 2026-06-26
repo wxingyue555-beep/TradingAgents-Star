@@ -16,9 +16,7 @@ TICKER_INPUT_EXAMPLES = "SPY, 0700.HK, BTC-USD"
 ANALYST_ORDER = [
     ("Market Analyst", AnalystType.MARKET),
     ("Sentiment Analyst", AnalystType.SOCIAL),
-    ("News Analyst", AnalystType.NEWS),
     ("Fundamentals Analyst", AnalystType.FUNDAMENTALS),
-    ("Industry Chain Analyst", AnalystType.INDUSTRY_CHAIN),
     ("Capital Flow Analyst", AnalystType.CAPITAL_FLOW),
 ]
 

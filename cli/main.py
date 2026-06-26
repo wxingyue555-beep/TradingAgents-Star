@@ -102,9 +102,7 @@ class MessageBuffer:
     ANALYST_MAPPING = {
         "market": "Market Analyst",
         "social": "Sentiment Analyst",
-        "news": "News Analyst",
         "fundamentals": "Fundamentals Analyst",
-        "industry_chain": "Industry_chain Analyst",
         "capital_flow": "Capital_flow Analyst",
     }
 

@@ -1,7 +1,11 @@
 """Data vendor routing — A-share / 港股通 local-only mode.
 
 All foreign vendors (yfinance, Alpha Vantage, FRED, Polymarket) have been removed.
-Only local_db (通达信) and china_news (新浪/财联社/东方财富) remain active.
+Active vendors: local_db (通达信), local_news_api (starweb.cpolar.io → news.db),
+and china_news (备用: 新浪/财联社/东方财富).
+
+Default news_data vendor is now local_news_api — reads from pre-classified
+local database instead of scraping live sources, reducing noise.
 """
 import logging
 
@@ -13,6 +17,7 @@ from .errors import (
 )
 # ===== Local Chinese data sources =====
 from .china_news import get_china_stock_news, get_china_global_news
+from .local_news_api import get_local_news_api, get_local_global_news_api
 from .local_db import (
     get_local_stock_data,
     get_local_fundamentals,
@@ -76,6 +81,7 @@ TOOLS_CATEGORIES = {
 VENDOR_LIST = [
     "local_db",
     "china_news",
+    "local_news_api",
 ]
 
 # Categories that degrade gracefully when no vendor can serve them.
@@ -108,10 +114,12 @@ VENDOR_METHODS = {
     "get_news": {
         "local_db": get_local_news,
         "china_news": get_china_stock_news,
+        "local_news_api": get_local_news_api,
     },
     "get_global_news": {
         "local_db": get_local_global_news,
         "china_news": get_china_global_news,
+        "local_news_api": get_local_global_news_api,
     },
     "get_insider_transactions": {
         # No local source available — gracefully unavailable

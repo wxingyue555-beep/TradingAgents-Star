@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking changes within the 0.x line are called out explicitly.
 
+## [0.3.2] — 2026-06-26
+
+### Added
+
+- **`local_news_api` vendor — pre-classified A-share news via HTTP API.** Replaces
+  live web scraping (新浪/财联社/东方财富) with calls to `starweb.cpolar.io/api/news/query`,
+  backed by a SQLite database (`news.db`) of 350+ rated and classified A-share
+  bullish announcements. Uses `idx_news_code` and `idx_news_date` indexes for
+  precise, zero-noise lookups.
+- **Direct SQLite fallback** when the HTTP API is unreachable. A local copy of
+  `news.db` is bundled in `tradingagents/dataflows/` and queried with the same
+  schema; the module auto-selects the available channel.
+- **Star-rating sort.** Individual stock news is sorted by star count descending
+  (⭐⭐⭐⭐⭐ first), so high-signal announcements reach the LLM first.
+
+### Changed
+
+- **Default news vendor switched** from `china_news` (live HTTP scraping) to
+  `local_news_api` in `default_config.py`.  The old scraper remains available
+  as a fallback via the vendor chain.
+- **Macro/global news returns an empty sentinel** instead of pulling all-stock
+  announcements. `news.db` stores company-level filings, not macro indicators
+  (CPI / GDP / Fed); the sentinel tells the LLM to focus on company-specific data.
+- **Web UI analyst selector** trimmed from 6 to 4 checkboxes to match the
+  backend graph. "News" and "Industry Chain" removed; Sentiment confirmed to
+  have real `news.db` data and kept on by default.
+
+### Removed
+
+- **News Analyst** — 3 of its 4 tools (`get_macro_indicators`,
+  `get_prediction_markets`, `get_global_news`) returned empty
+  `DATA_UNAVAILABLE` sentinels; the remaining `get_news` overlapped entirely
+  with the Sentiment Analyst.  Removed from the default analyst graph and CLI
+  selector.
+- **Industry Chain Analyst** — only had access to kline + technical indicators
+  (`get_stock_data`, `get_indicators`) but was prompted to produce value-chain,
+  market-share, and competitive-landscape analysis from thin air.  High
+  hallucination risk with no unique data source.  Removed from default graph
+  and CLI selector.
+
+### Fixed
+
+- **Reduced prompt noise.** The default analyst pipeline is now 4 agents
+  (Market, Sentiment, Fundamentals, Capital Flow), each backed by a verified
+  local data source and producing non-overlapping reports.
+- **API source label** in formatted output now reflects the active channel
+  (`starweb.cpolar.io` vs `SQLite fallback`), not the mere existence of the
+  local database file.
+
 ## [0.3.1] — 2026-06-25
 
 ### Fixed
@@ -441,6 +490,7 @@ PRs from late 2025 also landed here.
   portfolio manager. LangGraph orchestration, yfinance data, per-agent
   BM25 memory, single-provider OpenAI integration, interactive CLI.
 
+[0.3.2]: https://github.com/TauricResearch/TradingAgents/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/TauricResearch/TradingAgents/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.5...v0.3.0
 [0.2.5]: https://github.com/TauricResearch/TradingAgents/compare/v0.2.4...v0.2.5

@@ -44,8 +44,7 @@ class GraphSetup:
     def setup_graph(
         self,
         selected_analysts=(
-            "market", "social", "news", "fundamentals",
-            "industry_chain", "capital_flow",
+            "market", "social", "fundamentals", "capital_flow",
         ),
     ):
         plan = build_analyst_execution_plan(selected_analysts)
